@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EU AI Act: Layer 1 Compliance Tracker</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+        body { background: #030712; color: #38bdf8; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        .game-container { width: 100%; max-width: 480px; height: 100vh; max-height: 880px; background: #090d16; display: flex; flex-direction: column; position: relative; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.8); border: 1px solid #1e293b; }
+        header { padding: 10px 16px; background: #020617; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
+        h1 { font-size: 0.75rem; color: #f43f5e; text-transform: uppercase; letter-spacing: 1px; }
+        .status-panel { display: flex; gap: 8px; font-size: 0.7rem; }
+        .metric { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #f8fafc; }
+        
+        /* Live Audit Tracker Dashboard */
+        #trackerBox { width: 100%; height: 130px; background: #020617; border-bottom: 1px solid #1e293b; padding: 10px 14px; display: flex; flex-direction: column; justify-content: space-between; }
+        .tracker-header { display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; }
+        .gates-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: center; margin-top: 6px; }
+        .gate-node { background: #1e293b; border: 1px solid #334155; border-radius: 4px; height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; color: #64748b; font-weight: bold; }
+        .gate-node.passed { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #22c55e; }
+        .gate-node.failed { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
+        .gate-node.active { border-color: #38bdf8; color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+
+        #contentArea { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .card span.art { font-size: 0.65rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 3px; }
+        .card h3 { font-size: 0.8rem; color: #38bdf8; }
+        .card p { font-size: 0.72rem; color: #94a3b8; line-height: 1.3; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 4px; }
+        .opt-btn { background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 8px; text-align: left; font-size: 0.68rem; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .opt-btn:hover { background: #334155; border-color: #38bdf8; }
+        
+        .quote-box { background: #020617; border-left: 3px solid #f43f5e; padding: 8px; font-size: 0.65rem; line-height: 1.3; color: #cbd5e1; border-radius: 2px; }
+        
+        .feedback-box { background: #030712; border-left: 3px solid #38bdf8; padding: 6px; font-size: 0.68rem; line-height: 1.3; color: #e2e8f0; display: none; }
+        .next-btn { background: #0284c7; color: white; border: none; padding: 6px 14px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; cursor: pointer; align-self: flex-end; display: none; }
+        .next-btn:hover { background: #0369a1; }
+
+        .overlay { position: absolute; inset: 0; background: rgba(3, 7, 18, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; z-index: 20; }
+        .overlay h2 { font-size: 1.4rem; margin-bottom: 10px; color: #38bdf8; }
+        .overlay p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.5; }
+        .btn { background: #f43f5e; color: white; border: none; padding: 12px 24px; font-size: 0.85rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn:hover { background: #e11d48; }
+        .hidden { display: none !important; }
+        footer { padding: 6px; background: #020617; text-align: center; font-size: 0.6rem; color: #64748b; border-top: 1px solid #1e293b; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <header>
+        <h1>Layer 1 Audit Tracker</h1>
+        <div class="status-panel">
+            <div class="metric">Errors: <span id="errorVal" style="color:#f43f5e">0</span></div>
+            <div class="metric">Passed: <span id="passedVal" style="color:#22c55e">0</span>/7</div>
+        </div>
+    </header>
+
+    <!-- Visual Tracker Dashboard -->
+    <div id="trackerBox">
+        <div class="tracker-header">
+            <span>EU AI Act Foundation Gates (1-7)</span>
+            <span id="trackerStatus">Audit In Progress</span>
+        </div>
+        <div class="gates-grid" id="gatesGrid">
+            <div class="gate-node active" id="g1">G1</div>
+            <div class="gate-node" id="g2">G2</div>
+            <div class="gate-node" id="g3">G3</div>
+            <div class="gate-node" id="g4">G4</div>
+            <div class="gate-node" id="g5">G5</div>
+            <div class="gate-node" id="g6">G6</div>
+            <div class="gate-node" id="g7">G7</div>
+        </div>
+    </div>
+
+    <div id="contentArea"></div>
+
+    <div id="startScreen" class="overlay">
+        <h2>Can We Use This AI?</h2>
+        <p>Defend the compliance perimeter! Navigate through the 7 EU AI Act Foundation gates. Track your passes and errors live on the dashboard grid.</p>
+        <button class="btn" id="startBtn">Engage Audit Protocol</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay hidden">
+        <h2 id="endTitle">Audit Complete</h2>
+        <p id="finalText">All 7 Gates evaluated.</p>
+        <button class="btn" id="restartBtn">Re-run Audit</button>
+    </div>
+
+    <footer>EU AI Act Governance Dashboard &bull; Layer 1</footer>
+</div>
+
+<script>
+let errors = 0;
+let passedCount = 0;
+let currentGate = 0;
+let gateStatuses = ['active', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'];
+
+const gates = [
+    {
+        title: "Why are we using this AI system?",
+        article: "Art. 1",
+        quote: "Regulation (EU) 2024/1689, Article 1: 'The purpose of this Regulation is to improve the functioning of the internal market and promote the uptake of human-centric and trustworthy artificial intelligence...'",
+        question: "What is the primary objective and subject matter required under Article 1?",
+        options: [
+            { text: "To block all commercial machine learning models from public markets.", correct: false, explanation: "Breach! The Act promotes trustworthy AI rather than a commercial ban." },
+            { text: "To improve internal market functioning, promote human-centric AI, and protect fundamental rights, health, and safety.", correct: true, explanation: "Locked! Article 1 establishes internal market harmonization and fundamental rights." },
+            { text: "To define corporate tax brackets for cloud computing providers.", correct: false, explanation: "Breach! Taxation is outside the legal scope of the EU AI Act." }
+        ]
+    },
+    {
+        title: "Does the EU AI Act apply to us?",
+        article: "Arts. 2-3",
+        quote: "Regulation (EU) 2024/1689, Article 2(1)(c): 'This Regulation applies to providers and deployers of AI systems that have their place of establishment or are located in a third country, where the output produced by the system is used in the Union.'",
+        question: "Your firm is outside the EU, but your AI outputs are deployed and used within the European Union. Does the Act apply?",
+        options: [
+            { text: "No, territorial borders exempt third-country developers entirely.", correct: false, explanation: "Breach! Territorial reach has specific extraterritorial provisions." },
+            { text: "Yes! Article 2 extends applicability to providers/deployers outside the EU if the output is used within the Union.", correct: true, explanation: "Locked! Extraterritorial reach triggers whenever AI outputs impact EU operations." },
+            { text: "Only if you register a physical office in Brussels.", correct: false, explanation: "Breach! Applicability depends on market placement and output usage." }
+        ]
+    },
+    {
+        title: "Are our people capable of making this decision?",
+        article: "Art. 4",
+        quote: "Regulation (EU) 2024/1689, Article 4: 'Providers and deployers of AI systems shall take measures to ensure, to their best extent, a sufficient level of AI literacy of their staff...'",
+        question: "According to Article 4, what organizational obligation must deployers and providers ensure regarding personnel?",
+        options: [
+            { text: "A sufficient level of AI literacy for staff and operators involved in AI systems.", correct: true, explanation: "Locked! Article 4 mandates that providers and deployers ensure sufficient AI literacy." },
+            { text: "Every employee must hold an advanced PhD in computer science.", correct: false, explanation: "Breach! The requirement is practical AI literacy, not a specific PhD." },
+            { text: "No training is required as long as automated logs are active.", correct: false, explanation: "Breach! Human oversight and AI literacy are core statutory requirements." }
+        ]
+    },
+    {
+        title: "Is the AI system legally permissible?",
+        article: "Art. 5",
+        quote: "Regulation (EU) 2024/1689, Article 5(1): 'The following AI practices shall be prohibited: (a) the placing on the market, putting into service or use of an AI system that deploys subliminal techniques...'",
+        question: "Your team proposes a subliminal manipulation tool that distorts human behavior causing harm. How does Article 5 treat this?",
+        options: [
+            { text: "Fully permitted provided users accept terms of service.", correct: false, explanation: "Breach! Subliminal manipulation causing significant harm is strictly prohibited." },
+            { text: "Strictly prohibited because Article 5 bans AI practices deploying subliminal techniques or exploiting vulnerabilities.", correct: true, explanation: "Locked! Article 5 outlines prohibited manipulative AI practices." },
+            { text: "Allowed only for commercial marketing campaigns.", correct: false, explanation: "Breach! Manipulative techniques targeting vulnerabilities are outlawed." }
+        ]
+    },
+    {
+        title: "What type of AI system is this?",
+        article: "Art. 6",
+        quote: "Regulation (EU) 2024/1689, Article 6: Outlines classification rules for high-risk AI systems based on safety components and regulated critical sectors.",
+        question: "How does Article 6 categorize high-risk AI systems?",
+        options: [
+            { text: "Systems used in critical infrastructure, employment, biometric identification, or law enforcement.", correct: true, explanation: "Locked! Article 6 classifies safety-critical or fundamental rights systems as high-risk." },
+            { text: "Any software written in Python or JavaScript.", correct: false, explanation: "Breach! Programming language does not dictate legal risk category." },
+            { text: "Only generative models that create text and images.", correct: false, explanation: "Breach! High-risk spans safety components and regulated vertical sectors." }
+        ]
+    },
+    {
+        title: "Who are we under the Act?",
+        article: "Art. 25",
+        quote: "Regulation (EU) 2024/1689, Article 25: Details obligations where distributors, importers, or other third parties are considered providers of high-risk AI systems.",
+        question: "If you place your brand name on an AI system developed by a third party, what legal role do you assume under Article 25?",
+        options: [
+            { text: "You remain a passive user with zero liability.", correct: false, explanation: "Breach! Rebranding or modifying a system shifts provider obligations onto you." },
+            { text: "You are considered a provider assuming full legal compliance responsibilities.", correct: true, explanation: "Locked! Article 25 details when third parties are considered providers upon substantial modification/rebranding." },
+            { text: "You act as an independent external auditor.", correct: false, explanation: "Breach! Rebranding makes you legally accountable as the provider." }
+        ]
+    },
+    {
+        title: "Are GPAI obligations triggered?",
+        article: "Arts. 51-52",
+        quote: "Regulation (EU) 2024/1689, Articles 51-52: General-purpose AI models presenting systemic risk based on cumulative compute thresholds.",
+        question: "When are General-Purpose AI (GPAI) models classified as having 'systemic risk' under Articles 51-52?",
+        options: [
+            { text: "When their cumulative training compute exceeds 10^25 FLOPs.", correct: true, explanation: "Locked! Models trained with floating-point operations exceeding that compute threshold carry systemic risk obligations." },
+            { text: "Whenever they are downloaded more than 100 times.", correct: false, explanation: "Breach! Classification is anchored on computational compute power." },
+            { text: "GPAI models are exempt from all computational thresholds.", correct: false, explanation: "Breach! Compute thresholds explicitly trigger systemic risk governance rules." }
+        ]
+    }
+];
+
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const startScreen = document.getElementById('startScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const contentArea = document.getElementById('contentArea');
+const errorVal = document.getElementById('errorVal');
+const passedVal = document.getElementById('passedVal');
+
+startBtn.onclick = startGame;
+restartBtn.onclick = startGame;
+
+function startGame() {
+    currentGate = 0;
+    errors = 0;
+    passedCount = 0;
+    errorVal.innerText = errors;
+    passedVal.innerText = `${passedCount}/7`;
+    gateStatuses = ['active', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'];
+    updateTrackerUI();
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    loadGate();
+}
+
+function updateTrackerUI() {
+    for (let i = 0; i < 7; i++) {
+        let node = document.getElementById(`g${i+1}`);
+        node.className = `gate-node ${gateStatuses[i]}`;
+    }
+}
+
+function loadGate() {
+    let data = gates[currentGate];
+
+    contentArea.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <span class="art">${data.article}</span>
+                <h3>Gate ${currentGate + 1}: ${data.title}</h3>
+            </div>
+            <p>${data.question}</p>
+            <div class="options-grid" id="optContainer"></div>
+            <div class="quote-box">📜 <strong>Statute Excerpt:</strong> ${data.quote}</div>
+            <div class="feedback-box" id="feedbackBox"></div>
+            <button class="next-btn" id="nextBtn">Next Gate</button>
+        </div>
+    `;
+
+    let optContainer = document.getElementById('optContainer');
+    data.options.forEach(opt => {
+        let btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerText = opt.text;
+        btn.onclick = () => selectOption(opt, btn);
+        optContainer.appendChild(btn);
+    });
+}
+
+function selectOption(opt, selectedBtn) {
+    let allBtns = document.querySelectorAll('.opt-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    let feedbackBox = document.getElementById('feedbackBox');
+    if (opt.correct) {
+        selectedBtn.style.borderColor = '#22c55e';
+        selectedBtn.style.background = 'rgba(34, 197, 94, 0.15)';
+        feedbackBox.style.borderLeftColor = '#22c55e';
+        passedCount++;
+        passedVal.innerText = `${passedCount}/7`;
+        gateStatuses[currentGate] = 'passed';
+    } else {
+        selectedBtn.style.borderColor = '#ef4444';
+        selectedBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+        feedbackBox.style.borderLeftColor = '#ef4444';
+        errors++;
+        errorVal.innerText = errors;
+        gateStatuses[currentGate] = 'failed';
+    }
+
+    feedbackBox.innerHTML = `<strong>Result:</strong> ${opt.explanation}`;
+    feedbackBox.style.display = 'block';
+
+    let nextBtn = document.getElementById('nextBtn');
+    nextBtn.style.display = 'block';
+    nextBtn.onclick = () => {
+        currentGate++;
+        if (currentGate < gates.length) {
+            gateStatuses[currentGate] = 'active';
+            updateTrackerUI();
+            loadGate();
+        } else {
+            updateTrackerUI();
+            endGame();
+        }
+    };
+    updateTrackerUI();
+}
+
+function endGame() {
+    contentArea.innerHTML = "";
+    document.getElementById('endTitle').innerText = errors === 0 ? "Flawless Audit!" : "Audit Completed";
+    document.getElementById('finalText').innerText = `Passed: ${passedCount}/7 Gates | Total Errors: ${errors}. All statutory checks finalized.`;
+    gameOverScreen.classList.remove('hidden');
+}
+</script>
+
+</body>
+</html>
