@@ -1,0 +1,19 @@
+Copyright (c) 2026 Shay Lenehan Kemsley / CORESTATE Ltd
+All rights reserved.
+
+This repository contains a limited demonstration of CORESTATE Governance.
+
+Permission is granted to access and run this software solely for demonstration,
+evaluation and non-commercial testing purposes.
+
+No permission is granted to copy, modify, distribute, sublicense, sell,
+commercially exploit, reverse engineer, or incorporate this software or any
+substantial part of it into another product or service without prior written
+permission from Shay Lenehan Kemsley / CORESTATE Ltd.
+
+The full CORESTATE Governance implementation, including its wider architecture,
+decisioning logic, evidence processing, departmental routing and related
+proprietary components, is not included in this repository.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED.
